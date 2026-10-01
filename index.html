@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Калькулятор обеления зарплаты</title>
+<style>
+:root{
+  --bg:#07101f;--card:#0d1a2e;--text:#f4f7fb;--muted:#91a0b7;
+  --line:#20334e;--a:#6ee7ff;--b:#8b7cff;--good:#6ee7b7;--bad:#ff9e9e
+}
+*{box-sizing:border-box}
+body{
+  margin:0;color:var(--text);font-family:Inter,Arial,sans-serif;
+  background:radial-gradient(circle at 20% 0%,#172a50 0,transparent 35%),
+             linear-gradient(145deg,#050b15,#091427 60%,#0d1022)
+}
+.wrap{max-width:760px;margin:auto;padding:22px 16px 40px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--a);font-weight:800}
+h1{
+  font-size:clamp(30px,7vw,52px);line-height:.98;margin:9px 0 12px;font-weight:900;
+  background:linear-gradient(100deg,#fff 5%,#7de9ff 45%,#9b8cff 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent
+}
+.lead{color:#b8c4d6;font-size:15px;line-height:1.5;margin-bottom:22px}
+.panel{background:linear-gradient(145deg,rgba(16,31,53,.94),rgba(9,20,36,.96));
+border:1px solid var(--line);border-radius:22px;padding:18px;margin:14px 0}
+h2{font-size:18px;margin:0 0 15px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field label{display:block;color:#aab8cb;font-size:12px;margin:0 0 7px}
+.field input{
+  width:100%;min-height:48px;border:1px solid #29405f;border-radius:13px;
+  background:#071324;color:#fff;padding:0 13px;font-size:16px;outline:none
+}
+.field input:focus{border-color:var(--a);box-shadow:0 0 0 3px #6ee7ff1f}
+.hint,.note{font-size:11px;color:#718199;line-height:1.5;margin-top:12px}
+button{
+  width:100%;min-height:52px;border:0;border-radius:15px;margin-top:14px;
+  font-size:16px;font-weight:800;color:#07101f;
+  background:linear-gradient(100deg,var(--a),#9d8cff);cursor:pointer;transition:.2s transform
+}
+button:hover{transform:translateY(-2px)}
+.result{display:none}
+.hero{border-color:#6ee7ff47;background:linear-gradient(135deg,#193553e6,#1f1b46e6)}
+.big{font-size:32px;font-weight:900;margin:6px 0}
+.caption{color:var(--muted);font-size:13px}.delta{font-weight:800}
+.positive{color:var(--good)}.negative{color:var(--bad)}
+.table-wrap{overflow-x:auto}
+.table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+.table th,.table td{padding:11px 7px;border-bottom:1px solid var(--line);text-align:right}
+.table th:first-child,.table td:first-child{text-align:left;color:#b7c4d5}
+.table th{font-size:11px;color:#74839a}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.mini{background:#0a1628;border:1px solid #1d304a;border-radius:16px;padding:13px;transition:.22s}
+.mini:hover{transform:translateY(-3px);border-color:#426182}
+.mini b{display:block;font-size:17px;margin-bottom:4px}.mini span{font-size:11px;color:var(--muted)}
+.case{border-left:3px solid var(--a);background:#0a1729;border-radius:12px;padding:13px 14px;margin-top:12px;font-size:13px;line-height:1.5;color:#b9c7d9}
+.case strong{color:#fff}
+.tag{display:inline-block;padding:6px 9px;border-radius:99px;background:#13243b;color:#9edff0;font-size:11px;margin:7px 3px 0 0}
+.footer-note{text-align:center;color:#5f7089;font-size:10px;line-height:1.5;margin:20px 5px 0}
+@media(max-width:560px){
+  .grid,.cards{grid-template-columns:1fr}
+  .wrap{padding:18px 12px 30px}.panel{padding:15px;border-radius:18px}h1{font-size:34px}.big{font-size:28px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="eyebrow">Финансы без тумана</div>
+<h1>Сколько стоит<br>обелить зарплату?</h1>
+<div class="lead">
+Сравните налоговую нагрузку бизнеса <b>до</b> и <b>после</b> перехода
+от неофициальных выплат к официальной зарплате.
+</div>
+
+<form id="calc">
+<div class="panel">
+<h2>Ваши данные</h2>
+<div class="grid">
+
+<div class="field">
+<label>Годовая выручка, ₽</label>
+<input id="revenue" type="text" inputmode="decimal" autocomplete="off" placeholder="100 000 000">
+</div>
+
+<div class="field">
+<label>Официальный ФОТ сейчас, ₽</label>
+<input id="official" type="text" inputmode="decimal" autocomplete="off" placeholder="25 000 000">
+</div>
+
+<div class="field">
+<label>Неофициальные выплаты, ₽</label>
+<input id="gray" type="text" inputmode="decimal" autocomplete="off" placeholder="10 000 000">
+</div>
+
+<div class="field">
+<label>Стоимость обналичивания, %</label>
+<input id="cashout" type="text" inputmode="decimal" autocomplete="off" placeholder="5">
+</div>
+
+</div>
+
+<div class="hint">
+Введите стоимость получения неофициальных выплат, если она есть.
+Например, при 5% обналичивания 10 млн ₽ выплат обходятся бизнесу ещё в 500 тыс. ₽.
+</div>
+
+<div class="hint">
+В модели неофициальные выплаты до обеления уменьшают расчётную базу по налогу на прибыль.
+После обеления эта отдельная статья исчезает, а сумма переводится в официальный ФОТ по коэффициенту 1,15.
+</div>
+
+<button type="submit">Рассчитать</button>
+</div>
+</form>
+
+<div id="result" class="result">
+
+<div class="panel hero">
+<div class="caption">Изменение налоговой нагрузки</div>
+<div class="big" id="deltaTax">—</div>
+<div class="delta" id="deltaText">—</div>
+<div class="caption" style="margin-top:8px">
+Главный ориентир — изменение нагрузки в % от выручки
+</div>
+</div>
+
+<div class="panel">
+<h2>До / После</h2>
+<div class="table-wrap">
+<table class="table">
+<thead><tr><th>Показатель</th><th>До</th><th>После</th></tr></thead>
+<tbody>
+<tr><td>Выручка</td><td id="r1"></td><td id="r2"></td></tr>
+<tr><td>Официальный ФОТ</td><td id="f1"></td><td id="f2"></td></tr>
+<tr><td>Неофициальные выплаты</td><td id="g1"></td><td id="g2"></td></tr>
+<tr><td>Стоимость обналичивания</td><td id="c1"></td><td id="c2"></td></tr>
+<tr><td>Страховые взносы</td><td id="s1"></td><td id="s2"></td></tr>
+<tr><td>Расчётная база налога на прибыль</td><td id="b1"></td><td id="b2"></td></tr>
+<tr><td>Налог на прибыль</td><td id="p1"></td><td id="p2"></td></tr>
+<tr><td><b>Налоговая нагрузка</b></td><td id="t1"></td><td id="t2"></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="panel">
+<h2>Что изменилось</h2>
+<div class="cards">
+
+<div class="mini">
+<b id="insuranceDelta">—</b>
+<span>изменение страховых взносов</span>
+</div>
+
+<div class="mini">
+<b id="profitTaxDelta">—</b>
+<span>изменение налога на прибыль</span>
+</div>
+
+<div class="mini">
+<b id="cashoutCost">—</b>
+<span>стоимость обналичивания сейчас</span>
+</div>
+
+<div class="mini">
+<b id="graySaved">—</b>
+<span>неофициальные выплаты, которые исчезают как отдельный расход</span>
+</div>
+
+<div class="mini">
+<b id="newFot">—</b>
+<span>официальный ФОТ после обеления</span>
+</div>
+
+<div class="mini">
+<b id="totalBefore">—</b>
+<span>общая стоимость серых выплат сейчас</span>
+</div>
+
+</div>
+</div>
+
+<div class="panel">
+<h2>Логика расчёта</h2>
+<div class="case">
+<strong>Условный пример:</strong>
+10 млн ₽ неофициальных выплат и 5% стоимости обналичивания.
+Стоимость получения денег — ещё 500 тыс. ₽.
+При обелении 10 млн ₽ переводятся в официальный ФОТ:
+<b>10 млн × 1,15 = 11,5 млн ₽.</b>
+</div>
+
+<span class="tag">ФОТ × 1,15</span>
+<span class="tag">взносы: 30% → 29%</span>
+<span class="tag">налог на прибыль: 25%</span>
+</div>
+
+<div class="panel">
+<h2>Важно</h2>
+<div class="note">
+Это упрощённая управленческая модель для сравнения двух сценариев,
+а не расчёт налоговой декларации.
+
+29% — упрощающее допущение для страховых взносов после обеления.
+Коэффициент 1,15 используется согласно методологии этого калькулятора.
+
+Стоимость обналичивания учитывается как дополнительный расход,
+который существует в сценарии неофициальных выплат и исчезает после обеления.
+
+Другие расходы компании, льготы, индивидуальные особенности бизнеса
+и особенности выплат конкретным сотрудникам не учитываются.
+</div>
+</div>
+
+<div class="footer-note">
+Калькулятор показывает управленческую оценку изменения нагрузки.
+Перед принятием налоговых решений расчёт нужно проверить с учётом
+конкретной структуры бизнеса.
+</div>
+
+</div>
+</div>
+
+<script>
+const money = n => new Intl.NumberFormat('ru-RU',{
+  minimumFractionDigits:2,
+  maximumFractionDigits:2
+}).format(n) + ' ₽';
+
+const parseNum = id => {
+  const raw = String(document.getElementById(id).value || '')
+    .replace(/\s/g,'')
+    .replace(',','.');
+  const n = Number(raw);
+  return Number.isFinite(n) ? Math.max(0,n) : 0;
+};
+
+const formatInput = input => {
+  const raw = String(input.value || '')
+    .replace(/\s/g,'')
+    .replace(',','.');
+
+  if(!raw) return;
+
+  const parts = raw.split('.');
+  let intPart = parts[0].replace(/[^0-9]/g,'');
+
+  if(!intPart){
+    input.value='';
+    return;
+  }
+
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+  const decimalPart = parts.length > 1
+    ? ',' + parts[1].replace(/[^0-9]/g,'')
+    : '';
+
+  input.value = grouped + decimalPart;
+};
+
+['revenue','official','gray','cashout'].forEach(id => {
+  const input = document.getElementById(id);
+  input.addEventListener('input', () => formatInput(input));
+  input.addEventListener('blur', () => formatInput(input));
+  input.addEventListener('change', () => formatInput(input));
+});
+
+document.getElementById('calc').addEventListener('submit', e => {
+  e.preventDefault();
+
+  const revenue = parseNum('revenue');
+  const official = parseNum('official');
+  const gray = parseNum('gray');
+  const cashoutRate = parseNum('cashout') / 100;
+
+  if(!revenue){
+    alert('Введите годовую выручку.');
+    return;
+  }
+
+  /*
+    ДО ОБЕЛЕНИЯ
+
+    Серые выплаты уменьшают расчётную базу.
+    Стоимость обналичивания также является
+    дополнительным расходом в этой модели.
+  */
+
+  const cashoutCost = gray * cashoutRate;
+
+  const fotAfter = official + gray * 1.15;
+
+  const insuranceBefore = official * 0.30;
+  const insuranceAfter = fotAfter * 0.29;
+
+  const profitBaseBefore = Math.max(
+    0,
+    revenue
+    - official
+    - gray
+    - cashoutCost
+    - insuranceBefore
+  );
+
+  const profitBaseAfter = Math.max(
+    0,
+    revenue
+    - fotAfter
+    - insuranceAfter
+  );
+
+  const profitTaxBefore = profitBaseBefore * 0.25;
+  const profitTaxAfter = profitBaseAfter * 0.25;
+
+  const taxBurdenBefore =
+    insuranceBefore + profitTaxBefore;
+
+  const taxBurdenAfter =
+    insuranceAfter + profitTaxAfter;
+
+  const deltaTax =
+    taxBurdenAfter - taxBurdenBefore;
+
+  const deltaPercent =
+    revenue ? deltaTax / revenue * 100 : 0;
+
+  const set = (id,value) => {
+    document.getElementById(id).textContent = money(value);
+  };
+
+  [
+    ['r1',revenue],['r2',revenue],
+    ['f1',official],['f2',fotAfter],
+    ['g1',gray],['g2',0],
+    ['c1',cashoutCost],['c2',0],
+    ['s1',insuranceBefore],['s2',insuranceAfter],
+    ['b1',profitBaseBefore],['b2',profitBaseAfter],
+    ['p1',profitTaxBefore],['p2',profitTaxAfter],
+    ['t1',taxBurdenBefore],['t2',taxBurdenAfter],
+    ['insuranceDelta',insuranceAfter-insuranceBefore],
+    ['profitTaxDelta',profitTaxAfter-profitTaxBefore],
+    ['cashoutCost',cashoutCost],
+    ['graySaved',gray],
+    ['newFot',fotAfter],
+    ['totalBefore',gray + cashoutCost]
+  ].forEach(([id,value]) => set(id,value));
+
+  const deltaEl = document.getElementById('deltaTax');
+
+  deltaEl.textContent =
+    (deltaTax > 0 ? '+' : '') + money(deltaTax);
+
+  deltaEl.className =
+    'big ' + (deltaTax <= 0 ? 'positive' : 'negative');
+
+  document.getElementById('deltaText').textContent =
+    (deltaTax > 0
+      ? 'Налоговая нагрузка увеличивается на '
+      : 'Налоговая нагрузка не увеличивается в рамках этой модели: ')
+    + Math.abs(deltaPercent).toFixed(2).replace('.',',')
+    + '% от выручки';
+
+  document.getElementById('result').style.display = 'block';
+
+  document.getElementById('result').scrollIntoView({
+    behavior:'smooth',
+    block:'start'
+  });
+});
+</script>
+
+</body>
+</html>
